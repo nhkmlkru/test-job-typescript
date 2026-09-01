@@ -15,7 +15,7 @@ async function bootstrap(): Promise<void> {
 
   const url = await app.getUrl();
   Logger.log(`Application: ${url}`, 'Bootstrap');
-  Logger.log(`GraphQL IDE: ${url}/graphql`, 'Bootstrap');
+  Logger.log(`Apollo Sandbox: ${url}/graphql`, 'Bootstrap');
 }
 
 bootstrap();

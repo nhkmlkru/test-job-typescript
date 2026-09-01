@@ -30,6 +30,29 @@ const GRAPHIQL_HTML = `<!DOCTYPE html>
   </body>
 </html>`;
 
+const APOLLO_SANDBOX_HTML = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Apollo Sandbox</title>
+    <style>
+      html, body, #sandbox { height: 100%; margin: 0; overflow: hidden; }
+    </style>
+  </head>
+  <body>
+    <div id="sandbox"></div>
+    <script src="https://embeddable-sandbox.cdn.apollographql.com/_latest/embeddable-sandbox.umd.production.min.js"></script>
+    <script>
+      new window.EmbeddedSandbox({
+        target: '#sandbox',
+        initialEndpoint: window.location.href,
+        includeCookies: false,
+      });
+    </script>
+  </body>
+</html>`;
+
 type HeaderValue = string | string[] | undefined;
 
 function headerValue(value: HeaderValue): string {
@@ -130,11 +153,10 @@ export class GraphqlLandingPageMiddleware implements NestMiddleware {
       return;
     }
 
-    if (canEmbedSandbox(headerValue(req.headers.host), req.headers)) {
-      next();
-      return;
-    }
+    const html = canEmbedSandbox(headerValue(req.headers.host), req.headers)
+      ? APOLLO_SANDBOX_HTML
+      : GRAPHIQL_HTML;
 
-    res.type('html').send(GRAPHIQL_HTML);
+    res.type('html').send(html);
   }
 }
