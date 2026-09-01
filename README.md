@@ -1,36 +1,36 @@
-# &8D@>20O 2878B:0
+# Цифровая визитка
 
-Backend-?@8;>65=85 A GraphQL API: ?@>D8;L, =02K:8, >?KB @01>BK 8 ?@>5:BK. >A;5 70?CA:0 1070 ?>4=8<05BAO, <83@8@C5BAO 8 70?>;=O5BAO 40==K<8 02B><0B8G5A:8.
+Backend-приложение с GraphQL API: профиль, навыки, опыт работы и проекты. После запуска база поднимается, мигрируется и заполняется данными автоматически.
 
-## !B5:
+## Стек
 
 TypeScript, Node.js, NestJS, Prisma, GraphQL (Apollo Sandbox), PostgreSQL, Docker.
 
-## 0?CA: A =C;O
+## Запуск с нуля
 
-C6=K Docker 8 Docker Compose.
+Нужны Docker и Docker Compose.
 
 ```bash
 docker compose up --build
 ```
 
-B:@>9B5 [http://localhost:3000/graphql](http://localhost:3000/graphql)  B0< Apollo Sandbox.
+Откройте [http://localhost:3000/graphql](http://localhost:3000/graphql) — там Apollo Sandbox.
 
-@8 AB0@B5 :>=B59=5@ ?@8;>65=8O:
+При старте контейнер приложения:
 
-1. 4>68405BAO 3>B>2=>AB8 PostgreSQL;
-2. ?@8<5=O5B Prisma-<83@0F88;
-3. ?>4=8<05B NestJS;
-4. 5A;8 ?@>D8;L 5IQ =5 A>740=  70?8AK205B 53> 2 107C.
+1. дожидается готовности PostgreSQL;
+2. применяет Prisma-миграции;
+3. поднимает NestJS;
+4. если профиль ещё не создан — записывает его в базу.
 
->2B>@=K9 70?CA: A84 =5 4C1;8@C5B 40==K5. 'B>1K 70?>;=8BL 107C 70=>2>:
+Повторный запуск сид не дублирует данные. Чтобы заполнить базу заново:
 
 ```bash
 docker compose down -v
 docker compose up --build
 ```
 
-## @8<5@ 70?@>A0
+## Пример запроса
 
 ```graphql
 query {
@@ -51,7 +51,7 @@ query {
 }
 ```
 
- 0AH8@5==K9 70?@>A:
+Расширенный запрос:
 
 ```graphql
 query {
@@ -87,34 +87,34 @@ query {
 }
 ```
 
-## @E8B5:BC@0
+## Архитектура
 
-!;>8 @0745;5=K ?> >B25BAB25==>AB8:
+Слои разделены по ответственности:
 
-| !;>9 | 45 | 040G0 |
+| Слой | Где | Задача |
 | --- | --- | --- |
-| GraphQL | `src/profile/graphql`, `profile.resolver.ts` | >=B@0:B API 8 @07@5H5=85 2;>65==KE ?>;59 |
-| Application | `profile.service.ts` | !F5=0@88 GB5=8O 8 <0??8=3 2 API-<>45;8 |
-| Persistence | `profile.repository.ts`, `src/prisma` | 0?@>AK Prisma, 157 7=0=8O GraphQL |
-| Seed | `src/profile/seed` | AE>4=K5 40==K5 2878B:8 8 845<?>B5=B=0O 8=8F80;870F8O |
+| GraphQL | `src/profile/graphql`, `profile.resolver.ts` | Контракт API и разрешение вложенных полей |
+| Application | `profile.service.ts` | Сценарии чтения и маппинг в API-модели |
+| Persistence | `profile.repository.ts`, `src/prisma` | Запросы Prisma, без знания GraphQL |
+| Seed | `src/profile/seed` | Исходные данные визитки и идемпотентная инициализация |
 
-`Profile`  03@530B: =02K:8, >?KB, ?@>5:BK 8 AAK;:8 ?@8=04;560B 5<C.
+`Profile` — агрегат: навыки, опыт, проекты и ссылки принадлежат ему.
 
-;>65==K5 ?>;O GraphQL (`skills`, `experience`, `projects`, `links`) >1JO2;5=K :0: field resolvers. A;8 :;85=B 70?@>A8; 8E 2 `profile`, A5@28A ?>43@C605B A2O78 >4=8< Prisma-70?@>A>< (`include` B>;L:> 4;O 70?@>H5==KE ?>;59) 8 =5 E>48B 2 107C ?>2B>@=>. A;8 A2O78 =5 1K;8 703@C65=K 70@0=55, resolver 4>G8BK205B :>;;5:F8N >B45;L=>.
+Вложенные поля GraphQL (`skills`, `experience`, `projects`, `links`) объявлены как field resolvers. Если клиент запросил их в `profile`, сервис подгружает связи одним Prisma-запросом (`include` только для запрошенных полей) и не ходит в базу повторно. Если связи не были загружены заранее, resolver дочитывает коллекцию отдельно.
 
-GraphQL-<>45;8 =5 A>2?040NB >48= 2 >48= A Prisma: 40BK >?KB0 >B40NBAO :0: `MM.YYYY` 8 G5;>25:>G8B05<K9 `period`, 2=CB@5==85 `id` :>;;5:F89 2 API =5 A25BOBAO.
+GraphQL-модели не совпадают один в один с Prisma: даты опыта отдаются как `MM.YYYY` и человекочитаемый `period`, внутренние `id` коллекций в API не светятся.
 
-## !B@C:BC@0
+## Структура
 
 ```
 src/
-  prisma/           Prisma-:;85=B
-  common/           @071>@ GraphQL selection set, D>@<0B 40B
-  health/           GET / 8 GET /health
+  prisma/           Prisma-клиент
+  common/           разбор GraphQL selection set, формат дат
+  health/           GET / и GET /health
   profile/
-    graphql/        ObjectType-<>45;8
-    mappers/        Prisma � GraphQL
-    seed/           40==K5 8 70?>;=5=85 
+    graphql/        ObjectType-модели
+    mappers/        Prisma → GraphQL
+    seed/           данные и заполнение БД
     profile.resolver.ts
     profile.service.ts
     profile.repository.ts
@@ -123,7 +123,7 @@ prisma/
   migrations/
 ```
 
-## >:0;L=K9 70?CA: 157 A1>@:8 >1@070
+## Локальный запуск без сборки образа
 
 ```bash
 docker compose up db -d
