@@ -14,7 +14,7 @@ TypeScript, Node.js, NestJS, Prisma, GraphQL (Apollo Sandbox / GraphiQL), Postgr
 docker compose up --build
 ```
 
-Откройте [http://localhost:3000/graphql](http://localhost:3000/graphql) — там Apollo Sandbox. На удалённом HTTP-адресе (не localhost) вместо Sandbox открывается GraphiQL.
+Откройте [http://localhost:3000/graphql](http://localhost:3000/graphql) — там Apollo Sandbox. На HTTPS (Railway и другие) тоже Sandbox. На удалённом HTTP-адресе (не localhost) вместо Sandbox открывается GraphiQL: встроенный iframe Sandbox требует HTTPS.
 
 При старте контейнер приложения:
 

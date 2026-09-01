@@ -30,12 +30,78 @@ const GRAPHIQL_HTML = `<!DOCTYPE html>
   </body>
 </html>`;
 
-function isLocalHost(host: string): boolean {
+type HeaderValue = string | string[] | undefined;
+
+function headerValue(value: HeaderValue): string {
+  if (Array.isArray(value)) {
+    return value[0] ?? '';
+  }
+
+  return value ?? '';
+}
+
+function hostnameFromHost(host: string): string {
   const hostname = host.startsWith('[')
     ? host.slice(1, host.indexOf(']'))
     : (host.split(':')[0] ?? '');
 
-  return ['localhost', '127.0.0.1', '::1'].includes(hostname.toLowerCase());
+  return hostname.toLowerCase();
+}
+
+function isLocalHost(host: string): boolean {
+  return ['localhost', '127.0.0.1', '::1'].includes(hostnameFromHost(host));
+}
+
+function isIpv4Address(hostname: string): boolean {
+  return /^\d{1,3}(?:\.\d{1,3}){3}$/.test(hostname);
+}
+
+function requestProtocol(headers: {
+  'x-forwarded-proto'?: HeaderValue;
+  forwarded?: HeaderValue;
+}): string {
+  const forwardedProto = headerValue(headers['x-forwarded-proto'])
+    .split(',')[0]
+    .trim()
+    .toLowerCase();
+
+  if (forwardedProto) {
+    return forwardedProto;
+  }
+
+  const forwarded = headerValue(headers.forwarded).match(/proto=([^;,\s]+)/i);
+
+  return forwarded?.[1]?.toLowerCase() ?? '';
+}
+
+function canEmbedSandbox(
+  host: string,
+  headers: {
+    'x-forwarded-proto'?: HeaderValue;
+    forwarded?: HeaderValue;
+  },
+): boolean {
+  if (isLocalHost(host)) {
+    return true;
+  }
+
+  const hostname = hostnameFromHost(host);
+
+  if (hostname.endsWith('.railway.app')) {
+    return true;
+  }
+
+  const proto = requestProtocol(headers);
+
+  if (proto === 'https') {
+    return true;
+  }
+
+  if (proto === 'http') {
+    return false;
+  }
+
+  return hostname.includes('.') && !isIpv4Address(hostname);
 }
 
 @Injectable()
@@ -43,7 +109,12 @@ export class GraphqlLandingPageMiddleware implements NestMiddleware {
   use(
     req: {
       method: string;
-      headers: { host?: string; accept?: string; 'x-forwarded-proto'?: string };
+      headers: {
+        host?: HeaderValue;
+        accept?: HeaderValue;
+        'x-forwarded-proto'?: HeaderValue;
+        forwarded?: HeaderValue;
+      };
       query: Record<string, unknown>;
     },
     res: { type: (contentType: string) => { send: (body: string) => void } },
@@ -54,18 +125,12 @@ export class GraphqlLandingPageMiddleware implements NestMiddleware {
       return;
     }
 
-    if (!(req.headers.accept ?? '').includes('text/html')) {
+    if (!headerValue(req.headers.accept).includes('text/html')) {
       next();
       return;
     }
 
-    const forwardedProto = (req.headers['x-forwarded-proto'] ?? '')
-      .split(',')[0]
-      .trim();
-    const canEmbedSandbox =
-      isLocalHost(req.headers.host ?? '') || forwardedProto === 'https';
-
-    if (canEmbedSandbox) {
+    if (canEmbedSandbox(headerValue(req.headers.host), req.headers)) {
       next();
       return;
     }
