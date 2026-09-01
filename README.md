@@ -4,7 +4,7 @@ Backend-приложение с GraphQL API: профиль, навыки, оп�
 
 ## Стек
 
-TypeScript, Node.js, NestJS, Prisma, GraphQL (GraphiQL), PostgreSQL, Docker.
+TypeScript, Node.js, NestJS, Prisma, GraphQL (Apollo Sandbox / GraphiQL), PostgreSQL, Docker.
 
 ## Запуск с нуля
 
@@ -14,7 +14,7 @@ TypeScript, Node.js, NestJS, Prisma, GraphQL (GraphiQL), PostgreSQL, Docker.
 docker compose up --build
 ```
 
-Откройте [http://localhost:3000/graphql](http://localhost:3000/graphql) — там GraphiQL.
+Откройте [http://localhost:3000/graphql](http://localhost:3000/graphql) — там Apollo Sandbox. На удалённом HTTP-адресе (не localhost) вместо Sandbox открывается GraphiQL.
 
 При старте контейнер приложения:
 

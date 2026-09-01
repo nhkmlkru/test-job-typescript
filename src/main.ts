@@ -13,7 +13,7 @@ async function bootstrap(): Promise<void> {
 
   const url = await app.getUrl();
   Logger.log(`Application: ${url}`, 'Bootstrap');
-  Logger.log(`GraphiQL: ${url}/graphql`, 'Bootstrap');
+  Logger.log(`GraphQL IDE: ${url}/graphql`, 'Bootstrap');
 }
 
 bootstrap();
